@@ -1,0 +1,1 @@
+Baseline code copied from https://www.kaggle.com/pasewark/pytorch-resnet-lstm-with-attention.
