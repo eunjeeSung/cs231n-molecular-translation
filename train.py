@@ -16,11 +16,10 @@ import torchvision
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
 import torch.optim as optim
-import torch.nn.functional as F
 
 from data import InputDatasetTest
 from util import get_train_file_path, get_test_file_path, tensor_to_captions, save_model, transform
-from models.encoder import EncoderDecodertrain18
+from models.resnet_lstm import EncoderDecodertrain18
 
 
 if __name__ == "__main__":
@@ -28,7 +27,6 @@ if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     train = pd.read_csv('./input/sample.csv')
-    #train['file_path'] = train['image_id'].progress_apply(get_train_file_path)
     print(f'train.shape: {train.shape}')
 
 
@@ -47,16 +45,15 @@ if __name__ == "__main__":
     'D': 36,'S': 37,'<sos>': 38,'<eos>': 39,'<pad>': 40}
     itos={item[1]:item[0] for item in stoi.items()}
 
-
     # Models
     # TODO: Load from configs
-    embed_size=200
-    vocab_size = len(vocab)
+    vocab_size = len(vocab) + 10 # TODO: remove
+    embed_size=200  
     attention_dim=300
     encoder_dim=512
     decoder_dim=300
     num_epochs = 25
-    print_every = 100    
+    print_every = 1   
     batch_size=1
     num_workers=1
     learning_rate = 3e-4
@@ -106,12 +103,12 @@ if __name__ == "__main__":
                 #generate the caption
                 model.eval()
                 with torch.no_grad():
-                    dataiter = iter(data_loader)
+                    dataiter = iter(dataloader_train)
                     img,_ = next(dataiter)
                     features = model.encoder(img[0:1].to(device))
-                    caps, alphas = model.decoder.generate_caption(features,vocab=vocab)
+                    caps = model.decoder.generate_caption(features,itos=itos, stoi=stoi)
                     caption = ' '.join(caps)
-                    show_image(img[0], title=caption)
+                    print(caption)
                     
                 model.train()
             
