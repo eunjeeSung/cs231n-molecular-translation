@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+import torch.nn.functional as F
+
 class Attention(nn.Module):
     """model adapted from https://www.kaggle.com/mdteach/image-captioning-with-attention-pytorch/data
     """
@@ -27,4 +29,4 @@ class Attention(nn.Module):
         attention_weights = features * alpha.unsqueeze(2)  #(batch_size,64,features_dim)
         attention_weights = attention_weights.sum(dim=1)   #(batch_size,64)
         
-        return alpha,attention_weights
+        return alpha, attention_weights
