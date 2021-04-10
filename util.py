@@ -3,7 +3,9 @@ from PIL import Image
 
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import pad_sequence
 from torchvision.transforms.transforms import Compose, Normalize, Resize, ToTensor, RandomHorizontalFlip, RandomCrop
+
 
 # IO
 transform = Compose([
@@ -31,7 +33,24 @@ def get_test_file_path(image_id):
 
 
 # NLP
-def string_to_ints(string):
+class CapsCollate:
+    """
+    Collate to apply the padding to the captions with dataloader
+    """
+    def __init__(self,pad_idx,batch_first=False):
+        self.pad_idx = pad_idx
+        self.batch_first = batch_first
+    
+    def __call__(self,batch):
+        imgs = [item[0].unsqueeze(0) for item in batch]
+        imgs = torch.cat(imgs,dim=0)
+        
+        targets = [item[1] for item in batch]
+        targets = pad_sequence(targets, batch_first=self.batch_first, padding_value=self.pad_idx)
+        return imgs,targets
+
+
+def string_to_ints(string, stoi):
     l=[stoi['<sos>']]
     for s in string:
         l.append(stoi[s])
@@ -43,7 +62,7 @@ def ints_to_string(l):
 
 
 # misc.
-def tensor_to_captions(ten):
+def tensor_to_captions(ten, stoi, itos):
     l=ten.tolist()
     ret=[]
     for ls in l:

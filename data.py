@@ -2,17 +2,20 @@ from typing import Any, Callable, cast, Dict, List, Optional, Tuple
 
 import PIL
 from PIL import Image
+
+import torch
 from torch.utils.data import Dataset
 from torchvision import get_image_backend
 
-from util import get_train_file_path
+from util import get_train_file_path, string_to_ints
 
 class InputDatasetTest(Dataset):
-    def __init__(self, train, transform):
+    def __init__(self, train, transform, stoi):
         self.img_paths=get_train_file_path(train['image_id']) # TODO
         self.inchis = train['InChI']
-        self.loader=default_loader
-        self.transform=transform
+        self.loader = default_loader
+        self.transform = transform
+        self.stoi = stoi
 
     def __len__(self):
         return len(self.img_paths)
@@ -20,8 +23,12 @@ class InputDatasetTest(Dataset):
     def __getitem__(self, idx):
         sample = self.loader(self.img_paths[idx])
         sample = self.transform(sample)
-        inchi = self.inchis[idx]
-        return sample, idx
+
+        #numericalize the caption text
+        inchi_str = self.inchis[idx]
+        inchi_vec = string_to_ints(inchi_str, self.stoi)
+
+        return sample, torch.tensor(inchi_vec)
 
 
 def pil_loader(path: str) -> Image.Image: #copied from torchvision

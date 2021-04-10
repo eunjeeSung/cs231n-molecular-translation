@@ -36,7 +36,7 @@ class DecoderRNN(nn.Module):
         h, c = self.init_hidden_state(features) # (batch_size, decoder_dim)
         
         # get the seq length to iterate
-        seq_length = len(captions)-1 # Exclude the last one
+        seq_length = len(captions[0])-1 # Exclude the last one
         batch_size = captions.size(0)
         num_features = features.size(1)
         
@@ -44,8 +44,8 @@ class DecoderRNN(nn.Module):
         alphas = torch.zeros(batch_size, seq_length,num_features).to(device)
                 
         for s in range(seq_length):
-            alpha,context = self.attention(features, h)
-            lstm_input = torch.cat((embeds[:, s], context), dim=1)
+            alpha, attn_weight = self.attention(features, h)
+            lstm_input = torch.cat((embeds[:, s], attn_weight), dim=1)
             h, c = self.lstm_cell(lstm_input, (h, c))
                     
             output = self.fcn(self.drop(h))
@@ -53,7 +53,7 @@ class DecoderRNN(nn.Module):
             preds[:,s] = output
             alphas[:,s] = alpha     
         
-        return preds, alphas
+        return preds
     
     def generate_caption(self, features, max_len=200, itos=None,stoi=None):
         # Inference part
@@ -62,31 +62,31 @@ class DecoderRNN(nn.Module):
         h, c = self.init_hidden_state(features)  # (batch_size, decoder_dim)
         
         #starting input
-        word=torch.full((batch_size,1),stoi['<sos>']).to(device)
+        word = torch.full((batch_size,1),stoi['<sos>']).to(device)
         embeds = self.embedding(word)
 
-        #captions = []
         captions=torch.zeros((batch_size,202),dtype=torch.long).to(device)
         captions[:,0]=word.squeeze()
         
         for i in range(202):
-            alpha, attention_weights = self.attention(features, h)
+            alpha, attn_weights = self.attention(features, h)
         
-            lstm_input = torch.cat((embeds[:, 0], context), dim=1)
+            lstm_input = torch.cat((embeds[:, 0], attn_weights), dim=1)
             h, c = self.lstm_cell(lstm_input, (h, c))
             output = self.fcn(self.drop(h))
-            output = output.view(batch_size,-1)
+            output = output.view(batch_size,-1)  
             
             #select the word with most val
             predicted_word_idx = output.argmax(dim=1)
 
-            # TODO: apply weights
+            #save the generated word
+            captions[:,i]=predicted_word_idx
 
             #send generated word as the next caption
-            embeds=self.embedding(predicted_word_idx).unsqueeze(1)
+            embeds = self.embedding(predicted_word_idx).unsqueeze(1)
         
         #covert the vocab idx to words and return sentence
-        return [itos[idx] for idx in predicted_word_idx.cpu().numpy()]
+        return captions
     
     def init_hidden_state(self, encoder_out):
         mean_encoder_out = encoder_out.mean(dim=1)
