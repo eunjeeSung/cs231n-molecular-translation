@@ -1,0 +1,9 @@
+embed_size: 200
+attention_dim: 300
+encoder_dim: 512
+decoder_dim: 300
+num_epochs: 25
+print_every: 100
+batch_size: 16
+num_workers: 4
+learning_rate: 0.0004
