@@ -15,6 +15,7 @@ import torch
 import torch.nn as nn
 import torchvision
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 import torch.optim as optim
 
 from data import InputDatasetTest
@@ -25,7 +26,10 @@ from models.resnet_lstm import EncoderDecodertrain18
 if __name__ == "__main__":
     # Get train and test set
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    writer = SummaryWriter()
 
+
+    # Load training dataset
     train = pd.read_csv('./input/train_labels.csv')
     print(f'train.shape: {train.shape}')
 
@@ -63,6 +67,12 @@ if __name__ == "__main__":
     num_workers = cfgs['num_workers']
     learning_rate = cfgs['learning_rate']
     pad_idx = stoi["<pad>"]
+    is_sampling_mode = cfgs['is_sampling_mode']
+    sample_size = cfgs['sample_size']    
+
+    if is_sampling_mode:
+        train = train.sample(n=sample_size, random_state=1)
+        train = train.reset_index()
 
 
     # Main model
@@ -106,18 +116,13 @@ if __name__ == "__main__":
             optimizer.step()
 
             if (i+1) % print_every == 0:
-                print("Epoch: {} loss: {:.5f}".format(epoch, loss.item()))
-                
+                #print("Epoch: {} loss: {:.5f}".format(epoch, loss.item()))
                 #generate the caption
                 model.eval()
                 with torch.no_grad():
-                    dataiter = iter(dataloader_train)
-                    img, _ = next(dataiter)
-                    features = model.encoder(img[0:1].to(device))
-                    caps = model.decoder.generate_caption(features, itos=itos, stoi=stoi)
-                    captions = tensor_to_captions(caps, stoi, itos)
-                    print(captions)
-                    
+                    features = model.encoder(images[0:1].to(device))
+                    caps = model.decoder.generate_caption(features, stoi=stoi, itos=itos)
+                    captions = tensor_to_captions(caps, stoi=stoi, itos=itos)
                 model.train()
             
             #save the latest model
@@ -127,3 +132,8 @@ if __name__ == "__main__":
                         attention_dim=attention_dim,
                         encoder_dim=encoder_dim,
                         decoder_dim=decoder_dim )
+            writer.add_scalar("loss/train", loss.item(), epoch * batch_size + i)
+            writer.flush()
+
+    writer.close()
+            

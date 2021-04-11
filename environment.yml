@@ -17,4 +17,5 @@ dependencies:
     - seaborn
     - sklearn
     - tqdm  
+    - tensorboard
 prefix: /opt/conda/envs/venv

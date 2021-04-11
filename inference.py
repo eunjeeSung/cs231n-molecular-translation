@@ -18,8 +18,7 @@ if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    test = pd.read_csv('./input/sample_submission.csv')    
-    #test['file_path'] = test['image_id'].progress_apply(get_test_file_path)          
+    test = pd.read_csv('./input/sample_submission.csv')            
     train = pd.read_csv('./input/train_labels.csv')
 
     # Make vocab
@@ -50,8 +49,18 @@ if __name__ == "__main__":
     num_workers = cfgs['num_workers']
     learning_rate = cfgs['learning_rate']
     pad_idx = stoi["<pad>"]    
+    # TODO: implement official loss function
+    criterion = nn.CrossEntropyLoss(ignore_index=stoi["<pad>"])
+    is_sampling_mode = cfgs['is_sampling_mode']
+    sample_size = cfgs['sample_size']
 
-    MODEL_PATH = './checkpoints/attention_baseline.pth'    
+    if is_sampling_mode:
+        test = test.sample(n=sample_size, random_state=1)
+        test = test.reset_index()
+
+
+    # Model
+    MODEL_PATH = './checkpoints/sample.pth'    
     model = EncoderDecodertrain18(
         embed_size=embed_size,
         vocab_size = vocab_size,
@@ -60,7 +69,6 @@ if __name__ == "__main__":
         decoder_dim=decoder_dim    
     )
     model.to(device)
-
     # TODO: load hyperparameters
     model.load_state_dict(torch.load(MODEL_PATH)['state_dict'])
     
@@ -73,16 +81,23 @@ if __name__ == "__main__":
         collate_fn=CapsCollate(pad_idx=pad_idx, batch_first=True))
 
     model.eval()
+    losses = []
     with torch.no_grad():
-        for i, (images, _, indices) in enumerate(tqdm(dataloader_test)):
-            img = images.to(device)
-            features = model.encoder(img)
+        for i, (images, inchis, indices) in enumerate(tqdm(dataloader_test)):
+            images, inchis = images.to(device), inchis.to(device)
+            features = model.encoder(images)
             caps = model.decoder.generate_caption(features, stoi=stoi, itos=itos)
             captions = tensor_to_captions(caps, stoi=stoi, itos=itos)
             test['InChI'].loc[indices] = captions
-            if i % 1000==0: print(captions[0])
-            break
+            if i % print_every == 0:
+                # TODO: only pass caption length to the model
+                outputs = model(images, inchis)
+                targets = inchis[:, 1:].to(device)
+                loss = criterion(outputs.view(-1, vocab_size), targets.reshape(-1))
+                losses.append(loss)
+                print(f'Example output: {captions[0]} / Example loss: {loss}')
 
+    print(f'Average loss: {sum(losses) / len(losses)}, #loss: {len(losses)}')
     output_cols = ['image_id', 'InChI']
     test[output_cols].to_csv('submission.csv',index=False)
     print(test[output_cols].head())
