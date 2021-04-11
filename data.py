@@ -7,12 +7,13 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import get_image_backend
 
-from util import get_train_file_path, string_to_ints
+from util import get_train_file_path, get_test_file_path, string_to_ints
 
 class InputDatasetTest(Dataset):
-    def __init__(self, train, transform, stoi):
-        self.img_paths=get_train_file_path(train['image_id']) # TODO
-        self.inchis = train['InChI']
+    def __init__(self, df, transform, stoi, is_train=True):
+        self.img_paths = get_train_file_path(df['image_id']) if is_train \
+                            else get_test_file_path(df['image_id'])
+        self.inchis = df['InChI']
         self.loader = default_loader
         self.transform = transform
         self.stoi = stoi
@@ -28,7 +29,7 @@ class InputDatasetTest(Dataset):
         inchi_str = self.inchis[idx]
         inchi_vec = string_to_ints(inchi_str, self.stoi)
 
-        return sample, torch.tensor(inchi_vec)
+        return sample, torch.tensor(inchi_vec), idx
 
 
 def pil_loader(path: str) -> Image.Image: #copied from torchvision

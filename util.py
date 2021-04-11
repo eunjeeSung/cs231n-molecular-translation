@@ -26,10 +26,12 @@ def get_train_file_path(image_ids):
         for image_id in image_ids
     ]
 
-def get_test_file_path(image_id):
-    return "./input/test/{}/{}/{}/{}.png".format(
-        image_id[0], image_id[1], image_id[2], image_id 
-    )
+def get_test_file_path(image_ids):
+    return [
+        "./input/test/{}/{}/{}/{}.png".format(
+        image_id[0], image_id[1], image_id[2], image_id)
+        for image_id in image_ids
+    ]
 
 
 # NLP
@@ -41,13 +43,15 @@ class CapsCollate:
         self.pad_idx = pad_idx
         self.batch_first = batch_first
     
-    def __call__(self,batch):
+    def __call__(self, batch):
         imgs = [item[0].unsqueeze(0) for item in batch]
         imgs = torch.cat(imgs,dim=0)
         
         targets = [item[1] for item in batch]
         targets = pad_sequence(targets, batch_first=self.batch_first, padding_value=self.pad_idx)
-        return imgs,targets
+
+        indices = [item[2] for item in batch]
+        return imgs, targets, indices
 
 
 def string_to_ints(string, stoi):

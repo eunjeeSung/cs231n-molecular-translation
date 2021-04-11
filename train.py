@@ -86,7 +86,7 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss(ignore_index=stoi["<pad>"])    
 
     for epoch in tqdm(range(num_epochs)):   
-        for i, (images, inchis) in enumerate(dataloader_train):
+        for i, (images, inchis, _) in enumerate(dataloader_train):
             images, inchis = images.to(device), inchis.to(device)
 
             # Zero the gradients.
@@ -112,7 +112,7 @@ if __name__ == "__main__":
                 model.eval()
                 with torch.no_grad():
                     dataiter = iter(dataloader_train)
-                    img,_ = next(dataiter)
+                    img, _ = next(dataiter)
                     features = model.encoder(img[0:1].to(device))
                     caps = model.decoder.generate_caption(features, itos=itos, stoi=stoi)
                     captions = tensor_to_captions(caps, stoi, itos)
@@ -120,10 +120,10 @@ if __name__ == "__main__":
                     
                 model.train()
             
-        #save the latest model
-        save_model(model,epoch,
-            embed_size=200,
-            vocab_size = len(vocab),
-            attention_dim=300,
-            encoder_dim=512,
-            decoder_dim=300)
+            #save the latest model
+            save_model(model,epoch,
+                        embed_size=embed_size,
+                        vocab_size = vocab_size,
+                        attention_dim=attention_dim,
+                        encoder_dim=encoder_dim,
+                        decoder_dim=decoder_dim )
