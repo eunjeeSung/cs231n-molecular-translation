@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torchvision
 
-from models.encoder import EncoderCNNtrain18
-from models.decoder import DecoderRNN
+from .encoder import EncoderCNNtrain18
+from .decoder import DecoderRNN
 
 
 class EncoderDecodertrain18(nn.Module):

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from models.attention import Attention
+from .attention import Attention
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') 
 
