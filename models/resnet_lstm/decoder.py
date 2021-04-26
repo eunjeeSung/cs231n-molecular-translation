@@ -22,7 +22,7 @@ class DecoderRNN(nn.Module):
         
         self.init_h = nn.Linear(encoder_dim, decoder_dim)  
         self.init_c = nn.Linear(encoder_dim, decoder_dim)  
-        self.lstm_cell = nn.LSTMCell(embed_size+encoder_dim,decoder_dim,bias=True)
+        self.lstm_cell = nn.LSTMCell(embed_size+encoder_dim, decoder_dim, bias=True)
         self.f_beta = nn.Linear(decoder_dim, encoder_dim)
         
         self.fcn = nn.Linear(decoder_dim,vocab_size)
@@ -41,13 +41,14 @@ class DecoderRNN(nn.Module):
         num_features = features.size(1)
         
         preds = torch.zeros(batch_size, seq_length, self.vocab_size).to(device)
-        alphas = torch.zeros(batch_size, seq_length,num_features).to(device)
+        alphas = torch.zeros(batch_size, seq_length, num_features).to(device)
                 
         for s in range(seq_length):
             alpha, attn_weight = self.attention(features, h)
+
             lstm_input = torch.cat((embeds[:, s], attn_weight), dim=1)
             h, c = self.lstm_cell(lstm_input, (h, c))
-                    
+            
             output = self.fcn(self.drop(h))
             
             preds[:,s] = output
@@ -55,7 +56,7 @@ class DecoderRNN(nn.Module):
         
         return preds
     
-    def generate_caption(self, features, max_len=200, itos=None,stoi=None):
+    def generate_caption(self, features, max_len=200, itos=None, stoi=None):
         # Inference part
         # Given the image features generate the captions
         batch_size = features.size(0)
