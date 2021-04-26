@@ -1,3 +1,5 @@
+import copy
+
 import PIL
 from PIL import Image
 
@@ -6,6 +8,7 @@ import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence
 from torchvision.transforms.transforms import Compose, Normalize, Resize, ToTensor, RandomHorizontalFlip, RandomCrop
 
+from torchnlp.encoders.text import StaticTokenizerEncoder, stack_and_pad_tensors, pad_tensor
 
 # IO
 transform = Compose([
@@ -56,13 +59,27 @@ class CapsCollate:
 
 def string_to_ints(string, stoi):
     l=[stoi['<sos>']]
-    for s in string:
-        l.append(stoi[s])
+    i = 0
+    while i < len(string):
+        if string[i:i+2] in stoi:
+            l.append(stoi[ string[i:i+2] ])
+            i += 2
+        else:
+            l.append(stoi[string[i]])
+            i += 1
+    # for s in string:
+    #     l.append(stoi[s])
     l.append(stoi['<eos>'])
     return l
     
+    
 def ints_to_string(l):
     return ''.join(list(map(lambda i:itos[i],l)))
+
+
+# Transformer
+def _get_clones(module, N):
+    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
 # misc.

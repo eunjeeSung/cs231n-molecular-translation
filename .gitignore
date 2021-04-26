@@ -2,7 +2,10 @@
 **.pth
 **.csv
 **.zip
+**.ipynb
 
 input/
 checkpoints/
 runs/
+
+EDA.ipynb
