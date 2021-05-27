@@ -1,9 +1,13 @@
+is_sampling_mode: False # if true, test and evaluate on random samples
+sample_size: 10000
+
+# VGG16+LSTM Experiment
 embed_size: 200
-attention_dim: 300
-encoder_dim: 512
-decoder_dim: 300
-num_epochs: 25
+attention_dim: 128 #300
+encoder_dim: 512 #lstm:256
+decoder_dim: 512 #512 #300
+num_epochs: 6
 print_every: 100
-batch_size: 16
+batch_size: 128
 num_workers: 4
 learning_rate: 0.0004

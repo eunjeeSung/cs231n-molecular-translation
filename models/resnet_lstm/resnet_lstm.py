@@ -22,12 +22,9 @@ class EncoderDecodertrain18(nn.Module):
     def forward(self, images, captions):
         features = self.encoder(images)
         outputs = self.decoder(features, captions)
-
-        # for m generation
-        # outputs = self.m_classifier(features)
         return outputs
 
     def evaluate(self, images, stoi, itos):
         features = self.encoder(images)
-        captions = self.decoder.generate_caption(features, stoi=stoi, itos=itos)
+        captions = self.decoder.generate_caption(features, stoi, itos)
         return captions

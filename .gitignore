@@ -3,9 +3,11 @@
 **.csv
 **.zip
 **.ipynb
+.ipynb_checkpoints
 
 input/
 checkpoints/
 runs/
+**backup/
 
 EDA.ipynb
